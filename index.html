@@ -217,6 +217,31 @@
 
       text-align: center;
     }
+    /* Black outline for all overlay text */
+h1,
+.sub,
+.status,
+.board-name,
+.availability,
+.banner,
+.hero-label,
+.hero-name {
+  text-shadow:
+    -2px -2px 0 #000,
+     0px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  0px 0 #000,
+     2px  0px 0 #000,
+    -2px  2px 0 #000,
+     0px  2px 0 #000,
+     2px  2px 0 #000;
+}
+
+.sub,
+.status {
+  color: white;
+  font-weight: 800;
+}
   </style>
 </head>
 
@@ -261,7 +286,7 @@
   "Rainbow Galleria": "rainbowgalleria.png",
   "Western Land": "westernland.png",
   "Mario's Rainbow Castle": "mariorainbowcastle.png",
-  "King Bowser's Keep": "kingbowserskeep.png"
+  "King Bowser's Keep": "kingbowserkeep.png"
 };
 
     function esc(value) {
