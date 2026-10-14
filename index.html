@@ -74,31 +74,47 @@
       gap: 14px;
     }
 
-    .board {
-      width: min(29%, 330px);
-      min-height: 130px;
+  .board {
+  position: relative;
 
-      padding: 18px 12px;
+  width: min(29%, 330px);
+  min-height: 150px;
 
-      border: 3px solid var(--green);
-      border-radius: 15px;
+  padding: 18px 12px;
 
-      background:
-        linear-gradient(
-          145deg,
-          rgba(38, 51, 68, 0.95),
-          rgba(24, 33, 45, 0.95)
-        );
+  border: 3px solid var(--green);
+  border-radius: 15px;
 
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 
-      text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 
-      box-shadow: 0 4px 12px rgba(0,0,0,.35);
-    }
+  text-align: center;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,.35);
+
+  overflow: hidden;
+}
+
+.board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.35);
+
+  z-index: 0;
+}
+
+.board > * {
+  position: relative;
+  z-index: 1;
+}
 
     .board-name {
       font-size: clamp(15px, 1.5vw, 23px);
@@ -238,6 +254,15 @@
 
     let requestNumber = 0;
 
+    const BOARD_IMAGES = {
+  "Mega Wiggler's Tree Party": "wigglertreeparty.png",
+  "Roll 'em Raceway": "rollemraceway.png",
+  "Goomba Lagoon": "goombalagoon.png",
+  "Rainbow Galleria": "rainbowgalleria.png",
+  "Western Land": "westernland.png",
+  "Mario's Rainbow Castle": "mariorainbowcastle.png",
+  "King Bowser's Keep": "kingbowserskeep.png"
+};
 
     function esc(value) {
 
@@ -443,10 +468,15 @@
           const isBanned =
             teamBans.length > 0;
 
+          const boardImage =
+  BOARD_IMAGES[board.name] || "";
 
           html += `
 
-            <div class="board ${isBanned ? "banned" : ""}">
+            <div
+  class="board ${isBanned ? "banned" : ""}"
+  style="background-image: url('${boardImage}')"
+>
 
               <div class="board-name">
 
