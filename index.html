@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Party Panic Alliance II — Stage Banning</title>
+
+  <style>
+    :root {
+      --text: #f6f7fb;
+      --muted: #aab4c5;
+      --green: #38d878;
+      --red: #ff4f64;
+      --blue: #75b8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: transparent !important;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+    }
+
+    .wrap {
+      width: 100%;
+      padding: 22px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      text-align: center;
+      font-size: clamp(24px, 2.6vw, 42px);
+      font-weight: 900;
+    }
+
+    .sub {
+      text-align: center;
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: clamp(12px, 1vw, 17px);
+    }
+
+    .status {
+      text-align: center;
+      color: var(--muted);
+      margin: 10px 0 18px;
+      font-size: clamp(13px, 1.2vw, 18px);
+    }
+
+    .board-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .board-row {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .board {
+      width: min(29%, 330px);
+      min-height: 130px;
+
+      padding: 18px 12px;
+
+      border: 3px solid var(--green);
+      border-radius: 15px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(38, 51, 68, 0.95),
+          rgba(24, 33, 45, 0.95)
+        );
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      text-align: center;
+
+      box-shadow: 0 4px 12px rgba(0,0,0,.35);
+    }
+
+    .board-name {
+      font-size: clamp(15px, 1.5vw, 23px);
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .availability {
+      margin-top: 10px;
+
+      color: var(--green);
+
+      font-size: clamp(11px, 1vw, 15px);
+      font-weight: 900;
+    }
+
+    .board.banned {
+      border-color: var(--red);
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(64, 35, 43, 0.95),
+          rgba(36, 26, 35, 0.95)
+        );
+    }
+
+    .board.banned .availability {
+      color: #ff9aa5;
+    }
+
+    .banners {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .banner {
+      padding: 4px 7px;
+
+      background: #771f2b;
+      border: 1px solid #ff7c89;
+      border-radius: 6px;
+
+      color: white;
+
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .selected-slot {
+      visibility: hidden;
+    }
+
+    .hero {
+      max-width: 480px;
+      margin: 0 auto 20px;
+      padding: 14px;
+
+      border: 4px solid var(--blue);
+      border-radius: 18px;
+
+      background: rgba(20, 38, 59, 0.96);
+
+      text-align: center;
+
+      box-shadow: 0 0 24px rgba(117,184,255,.3);
+    }
+
+    .hero-label {
+      color: #a9d4ff;
+
+      font-size: clamp(12px, 1.2vw, 17px);
+      font-weight: 900;
+
+      letter-spacing: .12em;
+    }
+
+    .hero-name {
+      margin-top: 8px;
+
+      font-size: clamp(20px, 2.3vw, 34px);
+      font-weight: 900;
+    }
+
+    #error {
+      display: none;
+
+      max-width: 600px;
+      margin: 20px auto;
+
+      padding: 12px;
+
+      border: 2px solid var(--red);
+      border-radius: 10px;
+
+      background: rgba(50, 10, 15, .9);
+
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="wrap">
+
+    <h1>PARTY PANIC ALLIANCE II</h1>
+
+    <div class="sub">
+      STAGE BANNING
+    </div>
+
+    <div id="error">
+      Unable to connect to the board-ban system.
+    </div>
+
+    <div id="content">
+      <div class="status">
+        Connecting...
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+
+    /*
+      GOOGLE APPS SCRIPT DATA ENDPOINT
+    */
+
+    const API_URL =
+      "https://script.google.com/macros/s/AKfycbx82DD_fvhOT5CRhjd_hhSdB7waibdyqY03NCIYONpuA4WVOvt8a5DQ1g3bnFocjPwJ/exec";
+
+
+    let requestNumber = 0;
+
+
+    function esc(value) {
+
+      return String(value ?? "").replace(
+        /[&<>"']/g,
+        character => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[character]
+      );
+
+    }
+
+
+    function teamName(team) {
+
+      return team === "team1"
+        ? "Team 1"
+        : "Team 2";
+
+    }
+
+
+    /*
+      GOOGLE RETURNS THE DATA TO THIS FUNCTION
+    */
+
+    window.receiveBoardState = function(state) {
+
+      document.getElementById("error").style.display = "none";
+
+      render(state);
+
+    };
+
+
+    /*
+      REQUEST CURRENT BOARD STATE
+    */
+
+    function refreshState() {
+
+      requestNumber++;
+
+      const oldScript =
+        document.getElementById("state-request");
+
+      if (oldScript) {
+        oldScript.remove();
+      }
+
+
+      const script =
+        document.createElement("script");
+
+
+      script.id = "state-request";
+
+
+      script.src =
+        API_URL +
+        "?api=state" +
+        "&callback=receiveBoardState" +
+        "&t=" +
+        Date.now();
+
+
+      script.onerror = function() {
+
+        document.getElementById("error").style.display = "block";
+
+      };
+
+
+      document.body.appendChild(script);
+
+    }
+
+
+    /*
+      DRAW THE OVERLAY
+    */
+
+    function render(state) {
+
+      const bans = {};
+
+
+      ["team1", "team2"].forEach(team => {
+
+        state.teams[team].bans.forEach(id => {
+
+          if (!bans[id]) {
+            bans[id] = [];
+          }
+
+          bans[id].push(teamName(team));
+
+        });
+
+      });
+
+
+      const bothConfirmed =
+        state.teams.team1.confirmed &&
+        state.teams.team2.confirmed;
+
+
+      let html = `
+
+        <div class="status">
+
+          Mario Party Jamboree ·
+
+          ${
+            bothConfirmed
+              ? "Both teams confirmed"
+              : "Waiting for both teams to confirm"
+          }
+
+        </div>
+
+      `;
+
+
+      /*
+        SELECTED BOARD
+      */
+
+      if (state.selectedBoardId) {
+
+        html += `
+
+          <div class="hero">
+
+            <div class="hero-label">
+              BOARD SELECTED
+            </div>
+
+            <div class="hero-name">
+              ${esc(state.selectedBoardName)}
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
+
+      /*
+        3 BOARDS TOP
+        4 BOARDS BOTTOM
+      */
+
+      const rows = [
+
+        state.boards.slice(0, 3),
+
+        state.boards.slice(3, 7)
+
+      ];
+
+
+      html += `<div class="board-grid">`;
+
+
+      rows.forEach(row => {
+
+        html += `<div class="board-row">`;
+
+
+        row.forEach(board => {
+
+          /*
+            KEEP THE PYRAMID SHAPE AFTER
+            THE WINNING BOARD MOVES UP
+          */
+
+          if (
+            state.selectedBoardId === board.id
+          ) {
+
+            html += `
+
+              <div class="board selected-slot">
+              </div>
+
+            `;
+
+            return;
+
+          }
+
+
+          const teamBans =
+            bans[board.id] || [];
+
+
+          const isBanned =
+            teamBans.length > 0;
+
+
+          html += `
+
+            <div class="board ${isBanned ? "banned" : ""}">
+
+              <div class="board-name">
+
+                ${esc(board.name)}
+
+              </div>
+
+
+              <div class="availability">
+
+                ${
+                  isBanned
+                    ? "BANNED"
+                    : "AVAILABLE"
+                }
+
+              </div>
+
+
+              ${
+                isBanned
+
+                  ? `
+
+                    <div class="banners">
+
+                      ${
+
+                        teamBans.map(team => `
+
+                          <span class="banner">
+
+                            Banned by ${esc(team)}
+
+                          </span>
+
+                        `).join("")
+
+                      }
+
+                    </div>
+
+                  `
+
+                  : ""
+
+              }
+
+            </div>
+
+          `;
+
+        });
+
+
+        html += `</div>`;
+
+      });
+
+
+      html += `</div>`;
+
+
+      /*
+        TEAM CONFIRMATION STATUS
+      */
+
+      if (!bothConfirmed) {
+
+        html += `
+
+          <div class="status">
+
+            ${
+              state.teams.team1.confirmed
+                ? "Team 1 confirmed"
+                : "Team 1 has not confirmed"
+            }
+
+            ·
+
+            ${
+              state.teams.team2.confirmed
+                ? "Team 2 confirmed"
+                : "Team 2 has not confirmed"
+            }
+
+          </div>
+
+        `;
+
+      }
+
+
+      document.getElementById("content").innerHTML = html;
+
+    }
+
+
+    /*
+      START
+    */
+
+    refreshState();
+
+
+    /*
+      CHECK GOOGLE EVERY 1.5 SECONDS
+    */
+
+    setInterval(
+      refreshState,
+      1500
+    );
+
+  </script>
+
+</body>
+</html>
